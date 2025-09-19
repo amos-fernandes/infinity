@@ -8,17 +8,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Plus, 
-  Search, 
-  Download, 
-  Edit, 
+import {
+  Plus,
+  Search,
+  Download,
+  Edit,
   Trash2,
   Building2,
   Mail,
   Phone,
   Globe,
-  Upload
+  Upload,
+  ExternalLink,
+  MessageCircle
 } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { useForm } from "react-hook-form";
@@ -179,6 +181,57 @@ const LeadsManager = ({ onStatsUpdate }: LeadsManagerProps) => {
   const handleExport = () => {
     exportLeadsToCSV(leads);
     toast.success('Leads exportados com sucesso!');
+  };
+
+  const exportToCRM = async (leadId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('crm-export', {
+        body: { leadId, crmType: 'pipedrive' } // Default to Pipedrive, can be made configurable
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success('Lead exportado para o CRM com sucesso!');
+      } else {
+        throw new Error('Erro na exportação');
+      }
+    } catch (error) {
+      console.error('Erro ao exportar para CRM:', error);
+      toast.error('Erro ao exportar para CRM');
+    }
+  };
+
+  const sendWhatsApp = async (leadId: string) => {
+    try {
+      const lead = leads.find(l => l.id === leadId);
+      if (!lead) {
+        toast.error('Lead não encontrado');
+        return;
+      }
+
+      // Get WhatsApp number from contact channels
+      const whatsappNumber = lead.contact_channels?.whatsapp?.numero;
+      if (!whatsappNumber) {
+        toast.error('Número do WhatsApp não encontrado para este lead');
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('whatsapp-send', {
+        body: { to: whatsappNumber, message: 'Lead qualificado' }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success('Mensagem WhatsApp enviada com sucesso!');
+      } else {
+        throw new Error('Erro no envio');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar WhatsApp:', error);
+      toast.error('Erro ao enviar WhatsApp');
+    }
   };
 
   const standardizeRegime = (regime: string) => {
@@ -579,7 +632,8 @@ const LeadsManager = ({ onStatsUpdate }: LeadsManagerProps) => {
                 <TableHead>Setor</TableHead>
                 <TableHead>Contato</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Regime</TableHead>
+                <TableHead>Score</TableHead>
+                <TableHead>Urgência</TableHead>
                 <TableHead>Criado</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -623,7 +677,16 @@ const LeadsManager = ({ onStatsUpdate }: LeadsManagerProps) => {
                       {lead.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{lead.regime_tributario || '-'}</TableCell>
+                  <TableCell>
+                    <Badge variant={lead.qualification_score === 'A' ? 'default' : lead.qualification_score === 'B' ? 'secondary' : 'outline'}>
+                      {lead.qualification_score || '-'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={lead.urgency_level === 'Alta' ? 'destructive' : lead.urgency_level === 'Média' ? 'default' : 'secondary'}>
+                      {lead.urgency_level || '-'}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     {new Date(lead.created_at).toLocaleDateString('pt-BR')}
                   </TableCell>
@@ -633,14 +696,32 @@ const LeadsManager = ({ onStatsUpdate }: LeadsManagerProps) => {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(lead)}
+                        title="Editar lead"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => exportToCRM(lead.id)}
+                        title="Exportar para CRM"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => sendWhatsApp(lead.id)}
+                        title="Enviar WhatsApp"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleDelete(lead.id)}
                         className="text-destructive hover:text-destructive"
+                        title="Excluir lead"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

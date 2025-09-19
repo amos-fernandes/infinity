@@ -74,3 +74,15 @@ verify_jwt = true
 
 [functions.email-campaign]
 verify_jwt = true
+
+[functions.generate-lead]
+verify_jwt = true
+
+[functions.generate-campaign-leads]
+verify_jwt = true
+
+[functions.crm-export]
+verify_jwt = true
+
+[functions.whatsapp-send]
+verify_jwt = true

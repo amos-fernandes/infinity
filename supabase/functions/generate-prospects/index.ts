@@ -74,117 +74,64 @@ serve(async (req) => {
     }
 
     const prompt = `
-    Você é um especialista em inteligência de mercado focado em prospecção B2B para uma analise contábil e tributária especializada em medias empresas na cidade de goiania, estado de Goias.
+  Você é um Especialista em Prospecção B2B para Abertura de Conta PJ Digital no C6 Bank, atuando via escritório autorizado Infinity.
+  
+  Seu papel é identificar EXATAMENTE 50 prospects de alto potencial com CNPJ ativo, EXCLUINDO MEI e organizações do terceiro setor.
+  
+  Todos os prospects devem ser empresas com perfil de decisão centralizado (dono ou sócio como tomador de decisão).
+  
+  Use APENAS fontes públicas e auditáveis para gerar cada lead:
+    - Receita Federal (CNPJ ativo)
+    - Juntas Comerciais
+    - Sites oficiais das empresas
+    - Imprensa especializada (notícias de expansão, M&A, crescimento)
+    - Diários Oficiais (quando aplicável)
+    - Órgãos de classe (ex: OAB, CRM, CREA) para profissionais liberais
+  
+  Para cada prospect, gere:
+  
+    - "cnpj": string (apenas dígitos)
+    - "empresa": nome completo registrado
+    - "setor": setor de atuação principal (ex: "Tecnologia", "Varejo", "Advocacia")
+    - "contato_decisor": "{Nome} ({Cargo})", onde cargo = Fundador, Sócio, CEO, Diretor, Gerente Geral
+    - "telefone_comercial": "(XX) XXXX-XXXX" (do site oficial ou Google Meu Negócio)
+    - "email_corporativo": "nome.sobrenome@empresa.com.br" (formato padrão, apenas se inferível com segurança)
+    - "website": URL oficial
+    - "gancho_prospeccao": texto curto e poderoso baseado em oportunidade REAL, como:
+        • Expansão recente → necessidade de conta ágil
+        • Uso intenso de Pix/TEDs/boletos → redução de custos
+        • Falta de conta digital com atendimento humano
+        • Crescimento acelerado sem estrutura financeira
+        • Migração de banco tradicional com altas taxas
+        • Busca por crédito sujeito a análise
+        • Interesse em soluções digitais sem perder o contato humano
 
-    Sua tarefa é identificar EXATAMENTE 50 prospects de alto potencial nas seguintes áreas:
+  Critérios de qualificação BANT adaptados:
+    - Budget: qualquer empresa com movimentação bancária relevante
+    - Authority: dono ou sócio (obrigatório)
+    - Need: redução de custos bancários OU acesso a crédito
+    - Timing: interesse implícito em modernização ou expansão
 
-        Comércio e Varejo (bebidas, açougues, vestuários, restaurante e similares)
+  NUNCA invente dados. Se não houver informação suficiente, pule o campo ou omita o prospect.
+  NÃO gere leads para MEI ou entidades sem fins lucrativos.
 
-        E-commerce e Marketplaces
+  Retorne APENAS um JSON válido, SEM comentários, SEM explicações:
 
-        Saúde e Educação (Clínicas, consultorios, Cursos)
-
-        Drogarias e Farmacias
-
-        Transportes e Logística
-
-    Profissionais Liberais e Prestadores de Serviços ( Médicos, dentistas, advogados, engenheiros, arquitetos).
-
-    Para cada prospect, você deve gerar as seguintes informações:
-
-        CNPJ
-
-        Nome real da empresa
-
-        Setor de atuação
-
-        CNAE principal
-
-        Regime tributário provável (Simples nacional, Lucro Real ou Presumido)
-
-        Nome e cargo do decisor (Ex: Sócio, CEO, CFO, Diretor, Gerente geral)
-
-        E-mail corporativo (formato nome.sobrenome@empresa.com.br)
-
-        Telefone comercial
-
-        Telefone pessoal do tomador de decisões
-
-        Website oficial
-
-        Gancho de prospecção (Este é o ponto crucial. O gancho deve ser embasado em dados públicos e auditáveis que revelem uma dor ou oportunidade real para a empresa, como:
-
-            Fiscal/Contábil: Mudanças recentes em regimes especiais de tributação (ex: ICMS), autuações fiscais (conforme notícias ou processos públicos), incentivos fiscais expirando ou mal utilizados.
-
-          Crescimento acelerado sem gestão para tomada de decisão
-
-          Controle de vendas interestaduais (difal de ICMS).
-
-
-            Financeiro: Publicação de balanços financeiros que mostram alta carga tributária, perdas recorrentes, ou margens de lucro apertadas.
-
-            Alto volume de pagamentos e recebimentos.
-
-            Gestão de folha, encargos trabalhistas e benefícios.
-
-              Regras específicas de incentivos fiscais.
-
-
-            Operacional/Estratégico: Anúncio de fusões e aquisições, expansão para novos estados, necessidade de recuperação judicial, ou entrada em um novo mercado que exige uma reestruturação tributária.
-
-          Complexidade na apuração de impostos sobre produção.
-
-          Gestão de créditos de ICMS, IPI e regimes especiais.
-
-            Controle de custos e estoques.
-
-            Grande volume de notas fiscais e transações diárias.
-
-            Apuração de ICMS, PIS, COFINS e substituição tributária.
-
-            Necessidade de planejamento tributário para reduzir custos   
-
-
-        Regulatório: Requisitos de compliance complexos ou problemas com órgãos reguladores (ex: ANVISA para farmacêuticas, ANP para energia).
-
-        A prospecção deve ser baseada em fontes confiáveis como:
-
-            Diário Oficial da União/Estado
-
-            Balanços e demonstrações financeiras publicadas
-
-            Notícias de veículos de imprensa confiáveis sobre M&A, expansões ou problemas fiscais
-
-            Comunicados de órgãos reguladores
-
-            Juntas Comerciais
-
-          Cartório de Registro Civil de Pessoas Jurídicas
-
-          Receita Federal
-
-          Prefeitura Municipal
-
-          Secretaria Estadual da Fazenda (SEFAZ)
-
-        Órgãos de Classe (quando aplicável) ex.: OAB, CRM, CRV, CREA
-
-    Retorne APENAS um JSON válido no formato:
-        {
-          "prospects": [
-            {
-              "empresa": "Nome da Empresa S.A.",
-              "setor": "Agroindústria - Açúcar e Etanol", 
-              "cnae": "1071-6/00",
-              "regime_tributario": "Lucro Real",
-              "contato_decisor": "João Silva (CFO)",
-              "telefone": "(62) 3321-8200",
-              "email": "joao.silva@empresa.com.br",
-              "website": "empresa.com.br",
-              "gancho_prospeccao": "Investimentos recentes em expansão, problemas fiscais"
-            }
-          ]
-        }`;
+  {
+    "prospects": [
+      {
+        "cnpj": "12417515000105",
+        "empresa": "Google Brasil Internet Ltda.",
+        "setor": "Tecnologia",
+        "contato_decisor": "Sundar Pichai (CEO)",
+        "telefone_comercial": "(11) 3388-6800",
+        "email_corporativo": "financeiro@google.com.br",
+        "website": "https://google.com.br",
+        "gancho_prospeccao": "Empresa em constante expansão nacional com alta necessidade de transações digitais ágeis e sem custos"
+      }
+    ]
+  }
+`;
 
     console.log('Calling Google Gemini API...');
     

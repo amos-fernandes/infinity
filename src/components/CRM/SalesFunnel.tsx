@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
   Filter,
   Users,
   Target,
@@ -13,7 +14,10 @@ import {
   Plus,
   Search,
   ArrowRight,
-  Send
+  Send,
+  CheckCircle,
+  XCircle,
+  AlertCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,6 +49,8 @@ const SalesFunnel = ({ onStatsUpdate }: SalesFunnelProps) => {
     perdidos: 0
   });
   const [loading, setLoading] = useState(false);
+  const [campaignResults, setCampaignResults] = useState<any>(null);
+  const [showResultsDialog, setShowResultsDialog] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -97,30 +103,43 @@ const SalesFunnel = ({ onStatsUpdate }: SalesFunnelProps) => {
   const createAutoLeadCampaign = async (e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
-    
-    console.log('🔵 createAutoLeadCampaign called');
+
+    console.log('🔵 createAutoLeadCampaign called - Campaign-based generation');
     if (!user) return;
 
     try {
       setLoading(true);
-      
-      // Usar função de geração de prospects da IA
-      const { data, error } = await supabase.functions.invoke('generate-prospects', {
+
+      // Usar nova função de geração baseada em campanha
+      const { data, error } = await supabase.functions.invoke('generate-campaign-leads', {
         body: { userId: user.id }
       });
 
       if (error) throw error;
 
       if (data.success) {
-        toast.success(data.message);
+        const { totalProcessed, successCount, errorCount, results } = data;
+
+        // Store results for detailed display
+        setCampaignResults({ totalProcessed, successCount, errorCount, results });
+
+        // Show summary toast
+        toast.success(`Campanha concluída: ${successCount}/${totalProcessed} leads qualificados`);
+
+        // Log detailed results for debugging
+        console.log('Campaign results:', results);
+
+        // Show results dialog
+        setShowResultsDialog(true);
+
         loadFunnelStats();
         onStatsUpdate();
       } else {
         throw new Error(data.error);
       }
     } catch (error) {
-      console.error('Erro ao criar leads:', error);
-      toast.error('Erro ao criar leads');
+      console.error('Erro ao executar campanha de leads:', error);
+      toast.error('Erro ao executar campanha de prospecção');
     } finally {
       setLoading(false);
     }
@@ -209,13 +228,14 @@ const SalesFunnel = ({ onStatsUpdate }: SalesFunnelProps) => {
               <Target className="h-4 w-4 mr-2" />
               Qualificar Leads
             </Button>
-            <Button 
+            <Button
               onClick={(e) => createAutoLeadCampaign(e)}
               disabled={loading}
               type="button"
+              title="Executar campanha automatizada baseada nos critérios definidos"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Criar Leads
+              {loading ? 'Executando Campanha...' : 'Executar Campanha IA'}
             </Button>
           </div>
         </div>
@@ -286,6 +306,7 @@ const SalesFunnel = ({ onStatsUpdate }: SalesFunnelProps) => {
             <div className="space-y-2">
               <h4 className="font-medium text-sm">Próximas Ações</h4>
               <div className="text-xs text-muted-foreground">
+                • Executar campanha IA para descobrir novos leads<br />
                 • {stats.leads} leads aguardando contato<br />
                 • {stats.contatados} prospects para qualificar<br />
                 • {stats.qualificados} prontos para reunião
@@ -294,6 +315,88 @@ const SalesFunnel = ({ onStatsUpdate }: SalesFunnelProps) => {
           </div>
         </div>
       </CardContent>
+
+      {/* Campaign Results Dialog */}
+      <Dialog open={showResultsDialog} onOpenChange={setShowResultsDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Resultados da Campanha de Prospecção</DialogTitle>
+          </DialogHeader>
+
+          {campaignResults && (
+            <div className="space-y-4">
+              {/* Summary */}
+              <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">{campaignResults.totalProcessed}</div>
+                  <div className="text-sm text-muted-foreground">Total Processado</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{campaignResults.successCount}</div>
+                  <div className="text-sm text-muted-foreground">Sucessos</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">{campaignResults.errorCount}</div>
+                  <div className="text-sm text-muted-foreground">Erros</div>
+                </div>
+              </div>
+
+              {/* Detailed Results */}
+              <div className="space-y-2">
+                <h4 className="font-medium">Detalhes por Empresa:</h4>
+                <div className="max-h-96 overflow-y-auto space-y-2">
+                  {campaignResults.results.map((result: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {result.status === 'success' ? (
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-600" />
+                        )}
+                        <div>
+                          <div className="font-medium">{result.company}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {result.cnpj && `CNPJ: ${result.cnpj}`}
+                            {result.domain && ` | Domínio: ${result.domain}`}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {result.status === 'success' ? (
+                          <div>
+                            <Badge variant="default" className="mb-1">
+                              Score {result.qualificationScore}
+                            </Badge>
+                            <div className="text-xs text-muted-foreground">
+                              Lead ID: {result.leadId}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-red-600 max-w-xs truncate" title={result.message}>
+                            {result.message}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={() => setShowResultsDialog(false)}>
+                  Fechar
+                </Button>
+                <Button onClick={() => {
+                  setShowResultsDialog(false);
+                  setCampaignResults(null);
+                }}>
+                  OK
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

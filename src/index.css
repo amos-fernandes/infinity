@@ -2,41 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* CSS Reset for cross-browser compatibility */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
+    /* Background and text colors */
     --background: 248 250 252;
     --foreground: 215 25% 15%;
 
+    /* Card colors */
     --card: 255 255 255;
     --card-foreground: 215 25% 15%;
 
+    /* Popover colors */
     --popover: 255 255 255;
     --popover-foreground: 215 25% 15%;
 
+    /* Primary brand colors */
     --primary: 217 91% 52%;
     --primary-foreground: 255 255 255;
     --primary-glow: 217 91% 65%;
 
+    /* Secondary colors */
     --secondary: 217 32% 96%;
     --secondary-foreground: 217 91% 52%;
 
+    /* Muted colors */
     --muted: 217 32% 96%;
     --muted-foreground: 215 16% 46%;
 
+    /* Accent colors */
     --accent: 142 76% 36%;
     --accent-foreground: 255 255 255;
 
+    /* Destructive colors */
     --destructive: 0 84% 60%;
     --destructive-foreground: 255 255 255;
 
+    /* Border and input colors */
     --border: 217 32% 91%;
     --input: 217 32% 91%;
     --ring: 217 91% 52%;
 
+    /* Status colors */
     --success: 142 76% 36%;
     --warning: 38 92% 50%;
     --info: 217 91% 52%;
@@ -121,5 +138,126 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    /* Ensure background is applied */
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  /* Force application of CSS custom properties for cross-browser compatibility */
+  html {
+    color-scheme: light;
+  }
+
+  /* Cross-browser compatibility fixes */
+  /* Force CSS custom property application */
+  html {
+    /* Ensure CSS custom properties are available */
+    --background-fallback: #f8fafc;
+    --foreground-fallback: #334155;
+    --primary-fallback: #3b82f6;
+    --secondary-fallback: #f1f5f9;
+    --muted-fallback: #f1f5f9;
+    --border-fallback: #e2e8f0;
+  }
+
+  /* Fallback styles for browsers that don't support CSS custom properties properly */
+  @supports not (color: hsl(0 0% 0%)) {
+    :root {
+      --background: 248 250 252;
+      --foreground: 215 25% 15%;
+      --primary: 217 91% 52%;
+      --secondary: 217 32% 96%;
+      --muted: 217 32% 96%;
+      --border: 217 32% 91%;
+    }
+  }
+
+  /* Ensure proper color inheritance */
+  body {
+    background-color: hsl(var(--background, var(--background-fallback)));
+    color: hsl(var(--foreground, var(--foreground-fallback)));
+  }
+
+  /* Direct color overrides for critical elements */
+  .bg-background {
+    background-color: hsl(var(--background, 248 250 252)) !important;
+  }
+
+  .text-foreground {
+    color: hsl(var(--foreground, 215 25% 15%)) !important;
+  }
+
+  .bg-primary {
+    background-color: hsl(var(--primary, 217 91% 52%)) !important;
+  }
+
+  .text-primary {
+    color: hsl(var(--primary, 217 91% 52%)) !important;
+  }
+
+  .bg-secondary {
+    background-color: hsl(var(--secondary, 217 32% 96%)) !important;
+  }
+
+  .text-secondary {
+    color: hsl(var(--secondary, 217 91% 52%)) !important;
+  }
+
+  .bg-muted {
+    background-color: hsl(var(--muted, 217 32% 96%)) !important;
+  }
+
+  .text-muted-foreground {
+    color: hsl(var(--muted-foreground, 215 16% 46%)) !important;
+  }
+
+  .border-border {
+    border-color: hsl(var(--border, 217 32% 91%)) !important;
+  }
+
+  /* Fix for potential yellow tint issue */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Ensure CSS custom properties are applied immediately */
+  html {
+    /* Force CSS custom property inheritance */
+    color: hsl(var(--foreground, 215 25% 15%));
+  }
+
+  /* Browser-specific fixes */
+  @-moz-document url-prefix() {
+    /* Firefox-specific fixes */
+    :root {
+      --background: 248 250 252;
+      --foreground: 215 25% 15%;
+      --primary: 217 91% 52%;
+      --secondary: 217 32% 96%;
+      --muted: 217 32% 96%;
+      --border: 217 32% 91%;
+    }
+  }
+
+  /* Webkit-specific fixes for Safari/Chrome */
+  @media screen and (-webkit-min-device-pixel-ratio: 0) {
+    :root {
+      --background: 248 250 252;
+      --foreground: 215 25% 15%;
+      --primary: 217 91% 52%;
+      --secondary: 217 32% 96%;
+      --muted: 217 32% 96%;
+      --border: 217 32% 91%;
+    }
+  }
+
+  /* Fix background to white to prevent yellow tint in other browsers */
+  body {
+    background-color: #ffffff !important;
+  }
+
+  .bg-background {
+    background-color: #ffffff !important;
   }
 }

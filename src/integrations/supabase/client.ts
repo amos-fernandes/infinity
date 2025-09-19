@@ -2,11 +2,17 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://ibaonnnakuuerrgtilze.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliYW9ubm5ha3V1ZXJyZ3RpbHplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MzgxNTksImV4cCI6MjA2OTExNDE1OX0.16un-vvPxeIvC7kQyokpfZ6nt3adRM7HyMw9hyrMagE";
+// Use local development URLs when in development mode
+const SUPABASE_URL = import.meta.env.DEV
+  ? "http://127.0.0.1:54321"
+  : "https://ppuaolihdmnaofqlyvzx.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.DEV
+  ? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwdWFvbGloZG1uYW9mcWx5dnp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxOTU3NzgsImV4cCI6MjA3Mzc3MTc3OH0.PqjHcAruzasooi7bbnqOC_GgTR6-t-4kCKxs2LkgP5w"
+  : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwdWFvbGloZG1uYW9mcWx5dnp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxOTU3NzgsImV4cCI6MjA3Mzc3MTc3OH0.PqjHcAruzasooi7bbnqOC_GgTR6-t-4kCKxs2LkgP5w";
 
 // Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+//import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {

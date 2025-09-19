@@ -3,10 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  BarChart3, 
-  Users, 
-  Target, 
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  BarChart3,
+  Users,
+  Target,
   TrendingUp,
   Calendar,
   DollarSign,
@@ -32,6 +35,8 @@ const CRMDashboard = () => {
   const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isQualifying, setIsQualifying] = useState(false);
+  const [cnpj, setCnpj] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [stats, setStats] = useState({
     totalLeads: 0,
     totalContacts: 0,
@@ -93,16 +98,21 @@ const CRMDashboard = () => {
     }
   };
 
-  const handleGenerateProspects = async () => {
+  const handleGenerateLead = async () => {
+    if (!cnpj.trim()) {
+      toast.error("Por favor, insira um CNPJ válido");
+      return;
+    }
+
     setIsGenerating(true);
     try {
-      console.log('Calling generate-prospects with user ID:', user?.id);
-      
-      const { data, error } = await supabase.functions.invoke('generate-prospects', {
-        body: { userId: user?.id }
+      console.log('Calling generate-lead with CNPJ:', cnpj, 'user ID:', user?.id);
+
+      const { data, error } = await supabase.functions.invoke('generate-lead', {
+        body: { cnpj: cnpj.trim(), userId: user?.id }
       });
 
-      console.log('Generate prospects response:', { data, error });
+      console.log('Generate lead response:', { data, error });
 
       if (error) {
         console.error('Supabase function invoke error:', error);
@@ -113,15 +123,17 @@ const CRMDashboard = () => {
         throw new Error('Nenhuma resposta recebida da função');
       }
 
-      if (data.success) {
-        toast.success(data.message);
+      if (data.id) {
+        toast.success("Lead qualificado gerado com sucesso!");
+        setCnpj("");
+        setIsDialogOpen(false);
         await loadStats();
       } else {
-        throw new Error(data.error || 'Erro desconhecido');
+        throw new Error('Erro na resposta da função');
       }
     } catch (error) {
-      console.error('Erro ao gerar prospects:', error);
-      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido ao gerar prospects";
+      console.error('Erro ao gerar lead:', error);
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido ao gerar lead";
       toast.error(errorMessage);
     } finally {
       setIsGenerating(false);
@@ -166,14 +178,40 @@ const CRMDashboard = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            onClick={handleGenerateProspects}
-            disabled={isGenerating || isQualifying}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Brain className="h-4 w-4 mr-2" />
-            {isGenerating ? 'Gerando...' : 'Nova Campanha IA'}
-          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                disabled={isGenerating || isQualifying}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                {isGenerating ? 'Gerando...' : 'Novo Lead IA'}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Gerar Lead Qualificado</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="cnpj">CNPJ da Empresa</Label>
+                  <Input
+                    id="cnpj"
+                    placeholder="00.000.000/0000-00"
+                    value={cnpj}
+                    onChange={(e) => setCnpj(e.target.value)}
+                  />
+                </div>
+                <Button
+                  onClick={handleGenerateLead}
+                  disabled={isGenerating || !cnpj.trim()}
+                  className="w-full"
+                >
+                  {isGenerating ? 'Gerando Lead...' : 'Gerar Lead Qualificado'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button 
             variant="outline"
             onClick={handleQualifyLeads}
